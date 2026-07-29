@@ -286,26 +286,20 @@ export async function getIconDataURL(appPath: string): Promise<string> {
         if (iconPath) {
           try {
             const iconBuffer = fs.readFileSync(iconPath)
-            // resolveIconPath 也会命中 .svg/.xpm，写死 image/png 会让浏览器解码失败，需按扩展名给出正确 MIME
-            const iconExt = path.extname(iconPath).toLowerCase()
-            const iconMime =
-              iconExt === '.svg'
-                ? 'image/svg+xml'
-                : iconExt === '.xpm'
-                  ? 'image/x-xpixmap'
-                  : 'image/png'
-            return `data:${iconMime};base64,${iconBuffer.toString('base64')}`
+            return `data:image/png;base64,${iconBuffer.toString('base64')}`
           } catch {
             return darwinDefaultIcon
           }
         }
       }
-    } else {
-      return darwinDefaultIcon
     }
+    // 解析不到图标（.desktop 缺 Icon= 或图标文件找不到）时也必须返回默认图标：
+    // 返回空串会让渲染层跳过缓存，导致每次连接列表刷新都重新发起一次
+    // 同步扫描 /usr/share/applications 的请求，永久阻塞主进程
+    return darwinDefaultIcon
   }
 
-  return ''
+  return otherDevicesIcon
 }
 
 export async function getImageDataURL(url: string): Promise<string> {

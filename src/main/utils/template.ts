@@ -1,6 +1,7 @@
 import {
   DEFAULT_CONTROL_DNS,
   DEFAULT_CONTROL_SNIFF,
+  DEFAULT_DELAY_TEST_CONCURRENCY,
   DEFAULT_ENABLE_TRAFFIC_LOGGER,
   DEFAULT_MIHOMO_DNS_CONFIG,
   DEFAULT_MIHOMO_LAN_ALLOWED_IPS,
@@ -48,6 +49,7 @@ export const defaultConfig: IAppConfig = {
   autoUpdateProfileOnStart: true,
   silentUpdate: true,
   autoCloseConnection: true,
+  delayTestConcurrency: DEFAULT_DELAY_TEST_CONCURRENCY,
   subscriptionTimeout: 30000,
   gistAgeEncrypt: false,
   gistAgeRecipient: '',

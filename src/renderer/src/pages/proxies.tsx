@@ -39,6 +39,7 @@ import { includesIgnoreCase } from '@renderer/utils/includes'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { useTranslation } from 'react-i18next'
 import { HiOutlineAdjustmentsHorizontal } from 'react-icons/hi2'
+import { DEFAULT_DELAY_TEST_CONCURRENCY } from '../../../shared/appConfig'
 
 const GROUP_EXPAND_STATE_KEY = 'proxy_group_expand_state'
 const EMPTY_GROUPS: IMihomoMixedGroup[] = []
@@ -154,7 +155,7 @@ const Proxies: React.FC = () => {
     proxyDisplayOrder = 'default',
     autoCloseConnection = true,
     proxyCols = 'auto',
-    delayTestConcurrency = 50
+    delayTestConcurrency = DEFAULT_DELAY_TEST_CONCURRENCY
   } = appConfig || {}
 
   const [cols, setCols] = useState(1)
@@ -344,20 +345,14 @@ const Proxies: React.FC = () => {
 
   const onGroupDelay = useCallback(
     async (index: number): Promise<void> => {
-      // 折叠时 allProxies[index] 恒为空数组，而 setIsOpen 要等下一次渲染才生效，
-      // 本次调用必须直接取分组原始节点，否则点一下只会展开、一个节点都测不到
-      const isCollapsed = !isOpen[index]
-      if (isCollapsed) {
+      if (allProxies[index].length === 0) {
         setIsOpen((prev) => {
           const newOpen = [...prev]
           newOpen[index] = true
           return newOpen
         })
       }
-      const targetProxies = isCollapsed
-        ? groups[index].all.filter((proxy) => !!proxy)
-        : allProxies[index]
-      const proxyNames = targetProxies.map((p) => p.name)
+      const proxyNames = allProxies[index].map((p) => p.name)
       setDelaying((prev) => {
         const next = [...prev]
         next[index] = new Set(proxyNames)
@@ -367,7 +362,7 @@ const Proxies: React.FC = () => {
       // 限制并发数量
       const result: Promise<void>[] = []
       const runningList: Promise<void>[] = []
-      for (const proxy of targetProxies) {
+      for (const proxy of allProxies[index]) {
         const promise = Promise.resolve().then(async () => {
           let res: IMihomoDelay | undefined
           try {
@@ -400,7 +395,7 @@ const Proxies: React.FC = () => {
           runningList.splice(runningList.indexOf(running), 1)
         })
         runningList.push(running)
-        if (runningList.length >= (delayTestConcurrency || 50)) {
+        if (runningList.length >= (delayTestConcurrency || DEFAULT_DELAY_TEST_CONCURRENCY)) {
           await Promise.race(runningList)
         }
       }
@@ -410,7 +405,6 @@ const Proxies: React.FC = () => {
     [
       allProxies,
       groups,
-      isOpen,
       delayTestConcurrency,
       scheduleFlushDelayResults,
       flushDelayResults,
@@ -512,7 +506,10 @@ const Proxies: React.FC = () => {
                   >
                     {proxyDisplayMode === 'full' && (
                       <Chip size="sm" className="my-1 mr-2">
-                        {groups[index].all.length}
+                        {/* 收起时 allProxies 恒为空，只有展开且有搜索词才拿它当「已过滤数」 */}
+                        {isOpen[index] && searchValue[index]
+                          ? `${allProxies[index]?.length ?? 0}/${groups[index].all.length}`
+                          : groups[index].all.length}
                       </Chip>
                     )}
                     <CollapseInput
@@ -543,14 +540,10 @@ const Proxies: React.FC = () => {
                         for (let j = 0; j < index; j++) {
                           i += groupCounts[j]
                         }
-                        const pos = allProxies[index].findIndex(
-                          (proxy) => proxy.name === groups[index].now
+                        i += Math.floor(
+                          allProxies[index].findIndex((proxy) => proxy.name === groups[index].now) /
+                            cols
                         )
-                        // 当前节点被搜索/过滤掉或分组还没展开时 findIndex 为 -1，
-                        // Math.floor(-1/cols) 会变成 -1 把列表滚到上一组末尾，这里只滚到组头
-                        if (pos >= 0) {
-                          i += Math.floor(pos / cols)
-                        }
                         virtuosoRef.current?.scrollToIndex({
                           index: Math.floor(i),
                           align: 'start'

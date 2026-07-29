@@ -25,7 +25,7 @@ import { deepMerge } from '../utils/merge'
 import { createLogger } from '../utils/logger'
 import { decryptAgeContent } from '../utils/age'
 import { DEFAULT_CONTROL_DNS, DEFAULT_CONTROL_SNIFF } from '../../shared/appConfig'
-import { atomicWriteFile } from '../utils/safeFile'
+import { atomicWriteFile, WriteQueue } from '../utils/safeFile'
 
 const factoryLogger = createLogger('Factory')
 const SMART_OVERRIDE_ID = 'smart-core-override'
@@ -41,6 +41,10 @@ interface GenerateProfileOptions {
   outputPath?: string
   updateRuntimeConfig?: boolean
 }
+
+// generateProfile 的调用方（受控配置写入队列、核心操作队列、热重载）各自持有不同的锁，
+// 必须在这里再串行一次，否则跑得慢的那次会用旧输入覆盖后写入的 work 配置和 runtimeConfig。
+const generateProfileQueue = new WriteQueue()
 
 // 辅助函数：处理带偏移量的规则
 function processRulesWithOffset(ruleStrings: string[], currentRules: string[], isAppend = false) {
@@ -117,6 +121,15 @@ function ensureSmartProxyServerTunExclude(profile: IMihomoConfig, enabled: boole
 }
 
 export async function generateProfile(
+  pendingControledMihomoConfig?: Partial<IMihomoConfig>,
+  options: GenerateProfileOptions = {}
+): Promise<string | undefined> {
+  return generateProfileQueue.run(() =>
+    generateProfileInternal(pendingControledMihomoConfig, options)
+  )
+}
+
+async function generateProfileInternal(
   pendingControledMihomoConfig?: Partial<IMihomoConfig>,
   options: GenerateProfileOptions = {}
 ): Promise<string | undefined> {
@@ -379,10 +392,8 @@ function runOverrideScript(
     vm.createContext(ctx)
     const code = `${script} main(${JSON.stringify(profile)})`
     log('info', '开始执行脚本', 'w')
-    // 覆写脚本内容不受控（可从远程 URL 下载），死循环会同步占死主进程，必须限时中断。
-    const newProfile = vm.runInContext(code, ctx, { timeout: 5000 })
-    // typeof null === 'object'，单靠 typeof 会放行 null/数组，后续 deepMerge 会崩。
-    if (!newProfile || typeof newProfile !== 'object' || Array.isArray(newProfile)) {
+    const newProfile = vm.runInContext(code, ctx)
+    if (typeof newProfile !== 'object') {
       throw new Error('脚本返回值必须是对象')
     }
     log('info', '脚本执行成功')

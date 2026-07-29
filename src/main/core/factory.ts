@@ -25,7 +25,7 @@ import { deepMerge } from '../utils/merge'
 import { createLogger } from '../utils/logger'
 import { decryptAgeContent } from '../utils/age'
 import { DEFAULT_CONTROL_DNS, DEFAULT_CONTROL_SNIFF } from '../../shared/appConfig'
-import { atomicWriteFile, WriteQueue } from '../utils/safeFile'
+import { atomicWriteFile } from '../utils/safeFile'
 
 const factoryLogger = createLogger('Factory')
 const SMART_OVERRIDE_ID = 'smart-core-override'
@@ -41,10 +41,6 @@ interface GenerateProfileOptions {
   outputPath?: string
   updateRuntimeConfig?: boolean
 }
-
-// generateProfile 的调用方（受控配置写入队列、核心操作队列、热重载）各自持有不同的锁，
-// 必须在这里再串行一次，否则跑得慢的那次会用旧输入覆盖后写入的 work 配置和 runtimeConfig。
-const generateProfileQueue = new WriteQueue()
 
 // 辅助函数：处理带偏移量的规则
 function processRulesWithOffset(ruleStrings: string[], currentRules: string[], isAppend = false) {
@@ -124,15 +120,6 @@ export async function generateProfile(
   pendingControledMihomoConfig?: Partial<IMihomoConfig>,
   options: GenerateProfileOptions = {}
 ): Promise<string | undefined> {
-  return generateProfileQueue.run(() =>
-    generateProfileInternal(pendingControledMihomoConfig, options)
-  )
-}
-
-async function generateProfileInternal(
-  pendingControledMihomoConfig?: Partial<IMihomoConfig>,
-  options: GenerateProfileOptions = {}
-): Promise<string | undefined> {
   // 读取最新的配置
   const { current } = await getProfileConfig(true)
   const profileId = options.profileId ?? current
@@ -172,7 +159,21 @@ async function generateProfileInternal(
     delete controledMihomoConfig?.dns?.['nameserver-policy']
   }
 
+  // 受控配置里 tun['route-exclude-address'] 恒存在（默认空数组），直接合并会整体覆盖掉覆写写入的排除网段
+  const profileRouteExcludeAddress = currentProfile.tun?.['route-exclude-address']
+  const overrideRouteExcludeAddress = Array.isArray(profileRouteExcludeAddress)
+    ? [...profileRouteExcludeAddress]
+    : []
   const profile = deepMerge(currentProfile, controledMihomoConfig)
+  if (overrideRouteExcludeAddress.length > 0 && profile.tun) {
+    const controledRouteExcludeAddress = profile.tun['route-exclude-address']
+    profile.tun['route-exclude-address'] = [
+      ...new Set([
+        ...(Array.isArray(controledRouteExcludeAddress) ? controledRouteExcludeAddress : []),
+        ...overrideRouteExcludeAddress
+      ])
+    ]
+  }
   // 关闭 DNS 覆写时，如果最终配置没有启用的 DNS 配置，清空 dns-hijack 避免请求被劫持但无法处理
   if (!controlDns && profile.tun && !profile.dns?.enable) {
     profile.tun = { ...profile.tun, 'dns-hijack': [] }

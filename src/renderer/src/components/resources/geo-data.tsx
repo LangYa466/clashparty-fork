@@ -149,9 +149,16 @@ const GeoData: React.FC = () => {
             size="sm"
             type="number"
             className="w-[100px]"
-            value={geoUpdateInterval.toString()}
+            // 解构默认值只在 undefined 时生效；配置里如果已经落了 null（历史数据），
+            // 直接 .toString() 会抛错并让根部的 ErrorBoundary 把整个窗口变成崩溃页。
+            value={String(geoUpdateInterval ?? 24)}
             onValueChange={(v) => {
-              patchControledMihomoConfig({ 'geo-update-interval': parseInt(v) })
+              // 清空输入框时 v 是空串，parseInt('') = NaN，经 IPC 的 JSON 序列化后
+              // 会变成 null 落盘，之后每次进本页都崩。非法值直接不提交。
+              const interval = parseInt(v, 10)
+              if (Number.isFinite(interval) && interval > 0) {
+                patchControledMihomoConfig({ 'geo-update-interval': interval })
+              }
             }}
           />
         </SettingItem>

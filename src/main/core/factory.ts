@@ -159,7 +159,21 @@ export async function generateProfile(
     delete controledMihomoConfig?.dns?.['nameserver-policy']
   }
 
+  // 受控配置里 tun['route-exclude-address'] 恒存在（默认空数组），直接合并会整体覆盖掉覆写写入的排除网段
+  const profileRouteExcludeAddress = currentProfile.tun?.['route-exclude-address']
+  const overrideRouteExcludeAddress = Array.isArray(profileRouteExcludeAddress)
+    ? [...profileRouteExcludeAddress]
+    : []
   const profile = deepMerge(currentProfile, controledMihomoConfig)
+  if (overrideRouteExcludeAddress.length > 0 && profile.tun) {
+    const controledRouteExcludeAddress = profile.tun['route-exclude-address']
+    profile.tun['route-exclude-address'] = [
+      ...new Set([
+        ...(Array.isArray(controledRouteExcludeAddress) ? controledRouteExcludeAddress : []),
+        ...overrideRouteExcludeAddress
+      ])
+    ]
+  }
   // 关闭 DNS 覆写时，如果最终配置没有启用的 DNS 配置，清空 dns-hijack 避免请求被劫持但无法处理
   if (!controlDns && profile.tun && !profile.dns?.enable) {
     profile.tun = { ...profile.tun, 'dns-hijack': [] }

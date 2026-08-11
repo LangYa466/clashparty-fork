@@ -1,4 +1,5 @@
 import { execFile } from 'child_process'
+import { readFileSync } from 'fs'
 import { promisify } from 'util'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { app, dialog, ipcMain } from 'electron'
@@ -40,7 +41,8 @@ import {
   setupAppLifecycle,
   getSystemLanguage
 } from './lifecycle'
-import { configureAppPaths } from './utils/dirs'
+import { appConfigPath, configureAppPaths } from './utils/dirs'
+import { parse as parseYaml } from './utils/yaml'
 
 async function getWindowsPowerShellMajorVersion(): Promise<number | null> {
   // 仅 PS 3.0+ 写入 \3\ 键（\1\ 键恒为 2.0，不可用）。
@@ -107,14 +109,18 @@ initApp().catch((e) => {
 
 setupPlatformSpecifics()
 
-async function initHardwareAcceleration(): Promise<void> {
+// Electron 只允许在 app ready 之前禁用硬件加速，ready 之后调用会直接抛错。
+// 所以这里必须同步读配置文件，不能 await 任何异步初始化，否则设置会静默失效。
+function initHardwareAcceleration(): void {
   try {
-    await initBasic()
-    const { disableHardwareAcceleration = false } = await getAppConfig()
+    const { disableHardwareAcceleration = false } = parseYaml<Partial<IAppConfig>>(
+      readFileSync(appConfigPath(), 'utf-8')
+    )
     if (disableHardwareAcceleration) {
       app.disableHardwareAcceleration()
     }
   } catch (e) {
+    // 首次启动时配置文件还不存在，按默认（不禁用）处理即可。
     mainLogger.warn('Failed to read hardware acceleration config', e)
   }
 }
@@ -311,19 +317,22 @@ app
         initCoreWatcher()
         const startPromises = await startCoreForStartup()
         if (startPromises.length > 0) {
-          startPromises[0].then(async () => {
-            await Promise.allSettled([
-              initProfileUpdater().catch((e) =>
-                mainLogger.warn('Failed to init profile updater', e)
-              ),
-              initWebdavBackupScheduler().catch((e) =>
-                mainLogger.warn('Failed to init webdav backup scheduler', e)
-              ),
-              checkAdminRestartForTun().catch((e) =>
-                mainLogger.warn('Failed admin-restart-for-tun follow-up', e)
-              )
-            ])
-          })
+          startPromises[0]
+            .then(async () => {
+              await Promise.allSettled([
+                initProfileUpdater().catch((e) =>
+                  mainLogger.warn('Failed to init profile updater', e)
+                ),
+                initWebdavBackupScheduler().catch((e) =>
+                  mainLogger.warn('Failed to init webdav backup scheduler', e)
+                ),
+                checkAdminRestartForTun().catch((e) =>
+                  mainLogger.warn('Failed admin-restart-for-tun follow-up', e)
+                )
+              ])
+            })
+            // post-up 模式下这个 promise 可能 reject，缺 catch 会变成主进程未捕获异常弹窗。
+            .catch((e) => mainLogger.warn('Failed to run post-start tasks', e))
         }
         coreStarted = true
       } catch (e) {

@@ -33,7 +33,6 @@ import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { applyTheme, setNativeTheme, setTitleBarOverlay } from '@renderer/utils/ipc'
 import { platform } from '@renderer/utils/init'
 import { TitleBarOverlayOptions } from 'electron'
-import SubStoreCard from '@renderer/components/sider/substore-card'
 import NetworkCard from '@renderer/components/sider/network-card'
 import UsageCard from '@renderer/components/sider/usage-card'
 import { useTrafficLogger } from '@renderer/hooks/use-traffic-logger'
@@ -203,7 +202,6 @@ const App: React.FC = () => {
     rule: RuleCard,
     resource: ResourceCard,
     override: OverrideCard,
-    substore: SubStoreCard,
     network: NetworkCard,
     usage: UsageCard
   }

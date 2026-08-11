@@ -34,7 +34,6 @@ vi.mock('../utils/logger', () => ({
     error: vi.fn()
   })
 }))
-vi.mock('../resolve/server', () => ({ subStorePort: 8299 }))
 vi.mock('../core/mihomoApi', () => ({
   mihomoCloseAllConnections: vi.fn(),
   mihomoHotReloadConfig: mocks.hotReload

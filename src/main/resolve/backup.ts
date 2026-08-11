@@ -16,7 +16,6 @@ import {
   profileConfigPath,
   profilesDir,
   rulesDir,
-  subStoreDir,
   themesDir
 } from '../utils/dirs'
 import { getAppConfig } from '../config'
@@ -90,8 +89,7 @@ function createBackupZip(): AdmZip {
     { path: themesDir(), name: 'themes' },
     { path: profilesDir(), name: 'profiles' },
     { path: overrideDir(), name: 'override' },
-    { path: rulesDir(), name: 'rules' },
-    { path: subStoreDir(), name: 'substore' }
+    { path: rulesDir(), name: 'rules' }
   ]
 
   for (const file of files) {

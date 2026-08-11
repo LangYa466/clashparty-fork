@@ -17,7 +17,6 @@ const Tun = lazy(() => import('@renderer/pages/tun'))
 const Resources = lazy(() => import('@renderer/pages/resources'))
 const DNS = lazy(() => import('@renderer/pages/dns'))
 const Sniffer = lazy(() => import('@renderer/pages/sniffer'))
-const SubStore = lazy(() => import('@renderer/pages/substore'))
 const Traffic = lazy(() => import('@renderer/pages/traffic'))
 
 const HomeRedirect: React.FC = () => {
@@ -84,10 +83,6 @@ const routes = [
   {
     path: '/settings',
     element: <Settings />
-  },
-  {
-    path: '/substore',
-    element: <SubStore />
   },
   {
     path: '/traffic',

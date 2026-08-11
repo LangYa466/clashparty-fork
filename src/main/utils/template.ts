@@ -11,7 +11,6 @@ import {
   DEFAULT_NAMESERVER_POLICY,
   DEFAULT_NETWORK_INFO_CARD_ORDER,
   DEFAULT_SIDER_ORDER,
-  DEFAULT_USE_SUB_STORE,
   getDefaultMihomoTunDevice,
   DEFAULT_USE_NAMESERVER_POLICY
 } from '../../shared/appConfig'
@@ -40,7 +39,6 @@ export const defaultConfig: IAppConfig = {
   proxyCols: 'auto',
   connectionDirection: 'asc',
   connectionOrderBy: 'time',
-  useSubStore: DEFAULT_USE_SUB_STORE,
   autoQuitWithoutCore: false,
   autoQuitWithoutCoreDelay: 60,
   autoQuitWithoutCoreMode: 'core',

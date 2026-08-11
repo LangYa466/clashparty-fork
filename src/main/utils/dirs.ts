@@ -49,10 +49,6 @@ export function taskDir(): string {
   return dir
 }
 
-export function subStoreDir(): string {
-  return path.join(dataDir(), 'substore')
-}
-
 export function exeDir(): string {
   return path.dirname(exePath())
 }
@@ -156,15 +152,6 @@ export function logPath(): string {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   const name = `clash-party-${year}-${month}-${day}`
-  return path.join(logDir(), `${name}.log`)
-}
-
-export function substoreLogPath(): string {
-  const date = new Date()
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const name = `sub-store-${year}-${month}-${day}`
   return path.join(logDir(), `${name}.log`)
 }
 

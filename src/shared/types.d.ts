@@ -15,7 +15,6 @@ type SiderCardKey =
   | 'dns'
   | 'sniff'
   | 'log'
-  | 'substore'
   | 'network'
   | 'usage'
 type NetworkInfoCardKey = 'ip' | 'topology' | 'latency'
@@ -309,7 +308,6 @@ interface IAppConfig {
   resourceCardStatus?: CardStatus
   ruleCardStatus?: CardStatus
   sniffCardStatus?: CardStatus
-  substoreCardStatus?: CardStatus
   sysproxyCardStatus?: CardStatus
   tunCardStatus?: CardStatus
   usageCardStatus?: CardStatus
@@ -317,19 +315,11 @@ interface IAppConfig {
   gistAgeEncrypt?: boolean
   gistAgeRecipient?: string
   gistAgeSecretKey?: string
-  useSubStore: boolean
-  subStoreHost?: string
-  subStoreBackendSyncCron?: string
-  subStoreBackendDownloadCron?: string
-  subStoreBackendUploadCron?: string
   autoQuitWithoutCore?: boolean
   autoQuitWithoutCoreDelay?: number
   autoQuitWithoutCoreMode?: 'core' | 'tray'
-  useCustomSubStore?: boolean
-  useProxyInSubStore?: boolean
   mihomoCpuPriority?: Priority
   coreStartupMode?: 'log' | 'post-up'
-  customSubStoreUrl?: string
   diffWorkDir?: boolean
   autoSetDNS?: boolean
   originDNS?: string
@@ -577,18 +567,10 @@ interface IProfileItem {
   override?: string[]
   useProxy?: boolean
   extra?: ISubscriptionUserInfo
-  substore?: boolean
   allowFixedInterval?: boolean
   autoUpdate?: boolean
   authToken?: string
   userAgent?: string
   ageSecretKey?: string
   updateTimeout?: number
-}
-
-interface ISubStoreSub {
-  name: string
-  displayName?: string
-  icon?: string
-  tag?: string[]
 }

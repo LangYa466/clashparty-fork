@@ -11,7 +11,7 @@ const TRUNCATE_MARKER = Buffer.from('\n[LOG] File truncated because size limit r
 const COMPACTION_RETAIN_RATIO = 0.5
 
 // 日志文件路径既可以是固定字符串，也可以是一个在每次写入时求值的工厂函数。
-// 对于内核 / sub-store 这类长连接日志流，必须传入工厂函数，否则路径会在流创建
+// 对于内核这类长连接日志流，必须传入工厂函数，否则路径会在流创建
 // 时被固化，导致日志永远写入同一个文件、无法按日期轮转。
 type LogFilePath = string | (() => string)
 

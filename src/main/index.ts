@@ -18,7 +18,7 @@ import {
   initCoreWatcher
 } from './core/manager'
 import { createTray } from './resolve/tray'
-import { init, initBasic, safeShowErrorBox, startSubStoreServices } from './utils/init'
+import { init, initBasic, safeShowErrorBox } from './utils/init'
 import { initShortcut } from './resolve/shortcut'
 import { initProfileUpdater } from './core/profileUpdater'
 import { startMonitor } from './resolve/trafficMonitor'
@@ -354,12 +354,6 @@ app
     const queuedLaunchTargets = pendingLaunchTargets
     pendingLaunchTargets = []
     queuedLaunchTargets.forEach(queueLaunchTarget)
-
-    void startupSafetyPromise
-      .then(async (canContinue) => {
-        if (canContinue) await startSubStoreServices()
-      })
-      .catch((e) => mainLogger.warn('Failed to start sub-store services', e))
 
     const { showFloatingWindow: showFloating = false, disableTray = false } = appConfig
     const uiTasks: Promise<void>[] = [initShortcut()]

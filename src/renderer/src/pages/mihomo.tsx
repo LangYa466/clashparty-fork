@@ -38,7 +38,6 @@ import {
   mihomoUpgrade,
   mihomoHotReloadConfig,
   restartCore,
-  startSubStoreBackendServer,
   triggerSysProxy,
   fetchMihomoTags,
   installSpecificMihomoCore,
@@ -625,7 +624,6 @@ const Mihomo: React.FC = () => {
                   className="mr-2"
                   onPress={async () => {
                     await onChangeNeedRestart({ 'mixed-port': mixedPortInput })
-                    await startSubStoreBackendServer()
                     if (sysProxy?.enable) {
                       triggerSysProxy(true)
                     }

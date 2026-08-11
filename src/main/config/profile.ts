@@ -12,7 +12,6 @@ import { parse, stringify } from '../utils/yaml'
 import { defaultProfile } from '../utils/template'
 import { decryptAgeContent } from '../utils/age'
 import { DEFAULT_MIHOMO_PORTS } from '../../shared/appConfig'
-import { subStorePort } from '../resolve/server'
 import { mihomoCloseAllConnections, mihomoHotReloadConfig } from '../core/mihomoApi'
 import { checkProfileConfig, restartCore } from '../core/manager'
 import { generateProfile } from '../core/factory'
@@ -262,7 +261,6 @@ interface FetchOptions {
   ageSecretKey?: string
   authToken?: string
   timeout: number
-  substore: boolean
 }
 
 interface FetchResult {
@@ -317,9 +315,9 @@ function parsedProfileSummary(parsed: Record<string, unknown>): string {
 }
 
 async function fetchAndValidateSubscription(options: FetchOptions): Promise<FetchResult> {
-  const { url, useProxy, mixedPort, userAgent, authToken, timeout, substore } = options
+  const { url, useProxy, mixedPort, userAgent, authToken, timeout } = options
   const redactedUrl = redactSubscriptionUrl(url)
-  const fetchMode = substore ? 'substore' : useProxy ? 'proxy' : 'direct'
+  const fetchMode = useProxy ? 'proxy' : 'direct'
 
   const headers: Record<string, string> = {
     'User-Agent': userAgent,
@@ -331,7 +329,7 @@ async function fetchAndValidateSubscription(options: FetchOptions): Promise<Fetc
     `Fetching remote profile url=${redactedUrl} mode=${fetchMode} timeout=${timeout}ms auth=${authToken ? 'yes' : 'no'}`
   )
 
-  let requestUrl = url
+  const requestUrl = url
   let proxy:
     | {
         protocol: 'http'
@@ -340,15 +338,7 @@ async function fetchAndValidateSubscription(options: FetchOptions): Promise<Fetc
       }
     | false = false
 
-  if (substore) {
-    const urlObj = new URL(`http://127.0.0.1:${subStorePort}${url}`)
-    urlObj.searchParams.set('target', 'ClashMeta')
-    urlObj.searchParams.set('noCache', 'true')
-    if (useProxy && mixedPort !== 0) {
-      urlObj.searchParams.set('proxy', `http://127.0.0.1:${mixedPort}`)
-    }
-    requestUrl = urlObj.toString()
-  } else if (useProxy && mixedPort !== 0) {
+  if (useProxy && mixedPort !== 0) {
     proxy = { protocol: 'http', host: '127.0.0.1', port: mixedPort }
   }
 
@@ -416,7 +406,6 @@ export async function createProfile(item: Partial<IProfileItem>): Promise<IProfi
     name: item.name || (item.type === 'remote' ? 'Remote File' : 'Local File'),
     type: item.type || 'local',
     url: item.url,
-    substore: item.substore || false,
     interval: item.interval || 0,
     override: item.override || [],
     useProxy: item.useProxy || false,
@@ -442,7 +431,7 @@ export async function createProfile(item: Partial<IProfileItem>): Promise<IProfi
   await profileLogger.info(
     `Creating/updating remote profile id=${id} name=${newItem.name} url=${redactSubscriptionUrl(
       profileUrl
-    )} useProxy=${newItem.useProxy} substore=${newItem.substore}`
+    )} useProxy=${newItem.useProxy}`
   )
   const dedupKey = `${id}::${profileUrl}`
   const existing = inflightRemoteFetches.get(dedupKey)
@@ -467,15 +456,14 @@ export async function createProfile(item: Partial<IProfileItem>): Promise<IProfi
       mixedPort,
       userAgent: item.userAgent || userAgent || `mihomo.party/v${app.getVersion()} (clash.meta)`,
       ageSecretKey: newItem.ageSecretKey,
-      authToken: item.authToken,
-      substore: newItem.substore || false
+      authToken: item.authToken
     }
 
     const fetchSub = (useProxy: boolean, timeout: number): Promise<FetchResult> =>
       fetchAndValidateSubscription({ ...baseOptions, useProxy, timeout })
 
     let result: FetchResult
-    if (newItem.useProxy || newItem.substore) {
+    if (newItem.useProxy) {
       result = await fetchSub(Boolean(newItem.useProxy), userItemTimeoutMs)
     } else {
       try {

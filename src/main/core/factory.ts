@@ -393,8 +393,8 @@ function runOverrideScript(
     vm.createContext(ctx)
     const code = `${script} main(${JSON.stringify(profile)})`
     log('info', '开始执行脚本', 'w')
-    const newProfile = vm.runInContext(code, ctx)
-    if (typeof newProfile !== 'object') {
+    const newProfile = vm.runInContext(code, ctx, { timeout: 5000 })
+    if (typeof newProfile !== 'object' || newProfile === null || Array.isArray(newProfile)) {
       throw new Error('脚本返回值必须是对象')
     }
     log('info', '脚本执行成功')

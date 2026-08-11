@@ -93,7 +93,7 @@ function main(config) {
             if (group.interval) delete group.interval
             if (group.tolerance) delete group.tolerance
             if (group.lazy) delete group.lazy
-            if (group.expected_status) delete group['expected-status']
+            if (group['expected-status']) delete group['expected-status']
           }
         }
       }

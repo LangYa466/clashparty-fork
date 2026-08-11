@@ -8,6 +8,9 @@ export const DEFAULT_NAMESERVER_POLICY: IAppConfig['nameserverPolicy'] = {}
 
 export const DEFAULT_ENABLE_TRAFFIC_LOGGER = true
 
+// 并发过高时，受限网络（校园网 / NAT 会话数受限）下所有探测会互相饿死并同时超时，
+// 表现为「全部节点 Timeout」，所以默认取一个保守值。
+export const DEFAULT_DELAY_TEST_CONCURRENCY = 10
 export const DEFAULT_SIDER_ORDER: SiderCardKey[] = [
   'sysproxy',
   'tun',

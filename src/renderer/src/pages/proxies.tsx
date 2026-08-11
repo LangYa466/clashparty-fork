@@ -39,6 +39,7 @@ import { includesIgnoreCase } from '@renderer/utils/includes'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { useTranslation } from 'react-i18next'
 import { HiOutlineAdjustmentsHorizontal } from 'react-icons/hi2'
+import { DEFAULT_DELAY_TEST_CONCURRENCY } from '../../../shared/appConfig'
 
 const GROUP_EXPAND_STATE_KEY = 'proxy_group_expand_state'
 const EMPTY_GROUPS: IMihomoMixedGroup[] = []
@@ -154,7 +155,7 @@ const Proxies: React.FC = () => {
     proxyDisplayOrder = 'default',
     autoCloseConnection = true,
     proxyCols = 'auto',
-    delayTestConcurrency = 50
+    delayTestConcurrency = DEFAULT_DELAY_TEST_CONCURRENCY
   } = appConfig || {}
 
   const [cols, setCols] = useState(1)
@@ -394,7 +395,7 @@ const Proxies: React.FC = () => {
           runningList.splice(runningList.indexOf(running), 1)
         })
         runningList.push(running)
-        if (runningList.length >= (delayTestConcurrency || 50)) {
+        if (runningList.length >= (delayTestConcurrency || DEFAULT_DELAY_TEST_CONCURRENCY)) {
           await Promise.race(runningList)
         }
       }
@@ -505,7 +506,10 @@ const Proxies: React.FC = () => {
                   >
                     {proxyDisplayMode === 'full' && (
                       <Chip size="sm" className="my-1 mr-2">
-                        {groups[index].all.length}
+                        {/* 收起时 allProxies 恒为空，只有展开且有搜索词才拿它当「已过滤数」 */}
+                        {isOpen[index] && searchValue[index]
+                          ? `${allProxies[index]?.length ?? 0}/${groups[index].all.length}`
+                          : groups[index].all.length}
                       </Chip>
                     )}
                     <CollapseInput

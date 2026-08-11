@@ -13,7 +13,6 @@ import { AppConfigProvider } from './hooks/use-app-config'
 import { ControledMihomoConfigProvider } from './hooks/use-controled-mihomo-config'
 import { OverrideConfigProvider } from './hooks/use-override-config'
 import { ProfileConfigProvider } from './hooks/use-profile-config'
-import { PluginConfigProvider } from './hooks/use-plugin-config'
 import { RulesProvider } from './hooks/use-rules'
 import { GroupsProvider } from './hooks/use-groups'
 import { ToastProvider } from './components/base/toast'
@@ -53,17 +52,15 @@ init().then(() => {
               <AppConfigProvider>
                 <ControledMihomoConfigProvider>
                   <ProfileConfigProvider>
-                    <PluginConfigProvider>
-                      <OverrideConfigProvider>
-                        <GroupsProvider>
-                          <RulesProvider>
-                            <ToastProvider>
-                              <App />
-                            </ToastProvider>
-                          </RulesProvider>
-                        </GroupsProvider>
-                      </OverrideConfigProvider>
-                    </PluginConfigProvider>
+                    <OverrideConfigProvider>
+                      <GroupsProvider>
+                        <RulesProvider>
+                          <ToastProvider>
+                            <App />
+                          </ToastProvider>
+                        </RulesProvider>
+                      </GroupsProvider>
+                    </OverrideConfigProvider>
                   </ProfileConfigProvider>
                 </ControledMihomoConfigProvider>
               </AppConfigProvider>

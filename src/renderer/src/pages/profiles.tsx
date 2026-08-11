@@ -13,23 +13,13 @@ import {
 import BasePage from '@renderer/components/base/base-page'
 import { toast } from '@renderer/components/base/toast'
 import ProfileItem from '@renderer/components/profiles/profile-item'
-import PluginItem from '@renderer/components/plugins/plugin-item'
-import PluginInstallModal from '@renderer/components/plugins/plugin-install-modal'
 import EditInfoModal from '@renderer/components/profiles/edit-info-modal'
 import { useProfileConfig } from '@renderer/hooks/use-profile-config'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
-import { usePluginConfig } from '@renderer/hooks/use-plugin-config'
-import {
-  getFilePath,
-  readTextFile,
-  subStoreCollections,
-  subStoreSubs,
-  updatePluginProfile
-} from '@renderer/utils/ipc'
+import { getFilePath, readTextFile, subStoreCollections, subStoreSubs } from '@renderer/utils/ipc'
 import type { KeyboardEvent } from 'react'
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MdContentPaste, MdUnfoldMore, MdUnfoldLess } from 'react-icons/md'
-import { TbPuzzle } from 'react-icons/tb'
 import {
   DndContext,
   closestCenter,
@@ -45,7 +35,6 @@ import SubStoreIcon from '@renderer/components/base/substore-icon'
 import useSWR from 'swr'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { subscribePluginFile, takePendingPluginFile } from '@renderer/utils/plugin-file-open'
 import { DEFAULT_USE_SUB_STORE } from '../../../shared/appConfig'
 
 const Profiles: React.FC = () => {
@@ -80,12 +69,6 @@ const Profiles: React.FC = () => {
   const [fileOver, setFileOver] = useState(false)
   const [url, setUrl] = useState('')
   const [, setNow] = useState(new Date())
-  const { pluginConfig, mutatePluginConfig } = usePluginConfig()
-  const [showPluginImport, setShowPluginImport] = useState(false)
-  const [pluginDropFile, setPluginDropFile] = useState<File | null>(null)
-  const [pluginFileData, setPluginFileData] = useState<IPluginFilePayload | null>(null)
-  // bump per .cpx drop -> remount modal so it loads the new file even when open
-  const [pluginDropSeq, setPluginDropSeq] = useState(0)
   const isUrlEmpty = url.trim() === ''
   const sensors = useSensors(useSensor(PointerSensor))
   const { data: subs = [], mutate: mutateSubs } = useSWR(
@@ -202,20 +185,6 @@ const Profiles: React.FC = () => {
     handleImportRef.current()
   }, [])
 
-  const openPendingPluginFile = useCallback((): void => {
-    const payload = takePendingPluginFile()
-    if (!payload) return
-    setPluginDropFile(null)
-    setPluginFileData(payload)
-    setPluginDropSeq((n) => n + 1)
-    setShowPluginImport(true)
-  }, [])
-
-  useEffect(() => {
-    openPendingPluginFile()
-    return subscribePluginFile(openPendingPluginFile)
-  }, [openPendingPluginFile])
-
   useEffect(() => {
     const element = pageRef.current
     if (!element) return
@@ -246,12 +215,6 @@ const Profiles: React.FC = () => {
           } catch (e) {
             toast.error(String(e))
           }
-        } else if (name.endsWith('.cpx')) {
-          // .cpx -> plugin install modal (preview + confirm)
-          setPluginFileData(null)
-          setPluginDropFile(file)
-          setPluginDropSeq((n) => n + 1)
-          setShowPluginImport(true)
         } else if (file) {
           toast.warning(tRef.current('profiles.error.unsupportedFileType'))
         }
@@ -287,20 +250,6 @@ const Profiles: React.FC = () => {
         <>
           <Button
             size="sm"
-            title={t('plugins.title')}
-            isIconOnly
-            variant="light"
-            className="app-nodrag"
-            onPress={() => {
-              setPluginDropFile(null)
-              setPluginFileData(null)
-              setShowPluginImport(true)
-            }}
-          >
-            <TbPuzzle className="text-lg" />
-          </Button>
-          <Button
-            size="sm"
             title={t('profiles.updateAll')}
             className="app-nodrag"
             variant="light"
@@ -310,14 +259,10 @@ const Profiles: React.FC = () => {
               for (const item of items) {
                 if (item.id === current) continue
                 if (item.type === 'remote') await addProfileItem(item)
-                else if (item.type === 'plugin' && item.pluginId)
-                  await updatePluginProfile(item.pluginId, true)
               }
               const currentItem = items.find((item) => item.id === current)
               if (currentItem && currentItem.type === 'remote') {
                 await addProfileItem(currentItem)
-              } else if (currentItem?.type === 'plugin' && currentItem.pluginId) {
-                await updatePluginProfile(currentItem.pluginId, true)
               }
               setUpdating(false)
             }}
@@ -551,26 +496,6 @@ const Profiles: React.FC = () => {
         <Divider />
       </div>
 
-      {showPluginImport && (
-        <PluginInstallModal
-          key={pluginDropSeq}
-          initialFile={pluginDropFile ?? undefined}
-          initialData={pluginFileData ?? undefined}
-          onClose={() => {
-            setShowPluginImport(false)
-            setPluginDropFile(null)
-            setPluginFileData(null)
-            mutatePluginConfig()
-          }}
-        />
-      )}
-      {(pluginConfig?.items?.length ?? 0) > 0 && (
-        <div className="px-2 mt-2 mb-3 grid grid-cols-1 gap-2">
-          {pluginConfig?.items?.map((p) => (
-            <PluginItem key={p.id} item={p} onChanged={mutatePluginConfig} />
-          ))}
-        </div>
-      )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <div
           className={`${fileOver ? 'blur-sm' : ''} grid sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 m-2`}

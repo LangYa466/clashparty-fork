@@ -1,7 +1,6 @@
 import { Notification } from 'electron'
 import i18next from 'i18next'
 import { addProfileItem } from './config'
-import { installRemotePlugin, loginPlugin } from './resolve/plugin'
 import { mainWindow } from './window'
 import { safeShowErrorBox } from './utils/init'
 
@@ -33,28 +32,6 @@ export async function handleDeepLink(url: string): Promise<void> {
         new Notification({ title: i18next.t('profiles.notification.importSuccess') }).show()
       } catch (e) {
         safeShowErrorBox('profiles.error.importFailed', `${url}\n${e}`)
-      }
-      break
-    }
-    case 'install-plugin': {
-      let plugin: IPluginItem
-      try {
-        const pluginUrl = urlObj.searchParams.get('url')
-        if (!pluginUrl) {
-          throw new Error(i18next.t('profiles.error.urlParamMissing'))
-        }
-        plugin = await installRemotePlugin(pluginUrl)
-        new Notification({ title: i18next.t('plugins.installed') }).show()
-      } catch (e) {
-        safeShowErrorBox('plugins.installFailed', `${e}`)
-        break
-      }
-
-      try {
-        await loginPlugin(plugin.id)
-        new Notification({ title: i18next.t('plugins.loginSuccess') }).show()
-      } catch (e) {
-        safeShowErrorBox('plugins.loginFailed', `${e}`)
       }
       break
     }

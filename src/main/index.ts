@@ -34,7 +34,6 @@ import {
   closeMainWindow
 } from './window'
 import { findDeepLink, handleDeepLink } from './deeplink'
-import { findPluginFile, readPluginFile } from './resolve/plugin/file'
 import {
   fixUserDataPermissions,
   setupPlatformSpecifics,
@@ -123,7 +122,7 @@ async function initHardwareAcceleration(): Promise<void> {
 initHardwareAcceleration()
 setupAppLifecycle()
 
-type LaunchTarget = { type: 'deep-link' | 'plugin-file'; value: string }
+type LaunchTarget = { type: 'deep-link'; value: string }
 
 let launchTargetsReady = false
 let pendingLaunchTargets: LaunchTarget[] = []
@@ -140,27 +139,8 @@ function queueLaunchTarget(target: LaunchTarget): void {
 
   launchTargetChain = launchTargetChain
     .then(async () => {
-      if (target.type === 'deep-link') {
-        showMainWindow()
-        await handleDeepLink(target.value)
-        return
-      }
-
-      try {
-        await createWindow()
-        const window = mainWindow
-        if (!window || window.isDestroyed()) throw new Error('Main window is unavailable')
-        const rendererReady =
-          window.webContents.isLoadingMainFrame() || window.webContents.getURL() === ''
-            ? new Promise<void>((resolve) => window.webContents.once('did-finish-load', resolve))
-            : Promise.resolve()
-        showMainWindow()
-        const payload = await readPluginFile(target.value)
-        await rendererReady
-        window.webContents.send('openPluginFile', payload)
-      } catch (e) {
-        safeShowErrorBox('plugins.previewFailed', `${e}`)
-      }
+      showMainWindow()
+      await handleDeepLink(target.value)
     })
     .catch((e) => safeShowErrorBox('common.error.default', `${e}`))
 }
@@ -202,21 +182,13 @@ app.on('second-instance', (_event, commandline) => {
   const url = findDeepLink(commandline)
   if (url) {
     queueLaunchTarget({ type: 'deep-link', value: url })
-    return
+  } else {
+    showMainWindow()
   }
-  const pluginFile = findPluginFile(commandline)
-  if (pluginFile) queueLaunchTarget({ type: 'plugin-file', value: pluginFile })
-  else showMainWindow()
 })
 
 app.on('open-url', (_event, url) => {
   queueLaunchTarget({ type: 'deep-link', value: url })
-})
-
-app.on('open-file', (event, filePath) => {
-  event.preventDefault()
-  const pluginFile = findPluginFile([filePath])
-  if (pluginFile) queueLaunchTarget({ type: 'plugin-file', value: pluginFile })
 })
 
 const initPromise = (async () => {
@@ -371,16 +343,11 @@ app
       }
     })()
 
-    // macOS delivers cold-start targets through open-url/open-file; Windows/Linux put them in argv.
+    // macOS delivers cold-start links through open-url; Windows/Linux put them in argv.
     if (process.platform !== 'darwin') {
       const initialDeepLink = findDeepLink(process.argv)
       if (initialDeepLink) {
         queueLaunchTarget({ type: 'deep-link', value: initialDeepLink })
-      } else {
-        const initialPluginFile = findPluginFile(process.argv)
-        if (initialPluginFile) {
-          queueLaunchTarget({ type: 'plugin-file', value: initialPluginFile })
-        }
       }
     }
     launchTargetsReady = true

@@ -89,6 +89,7 @@ export const BaseEditor: React.FC<Props> = (props) => {
   const { value, readOnly = false, language, onChange } = props
 
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>(undefined)
+  const modelRef = useRef<monaco.editor.ITextModel>(undefined)
 
   const editorWillMount = (): void => {
     monacoInitialization()
@@ -99,7 +100,12 @@ export const BaseEditor: React.FC<Props> = (props) => {
 
     const uri = monaco.Uri.parse(`${nanoid()}.${language === 'yaml' ? 'clash' : ''}.${language}`)
     const model = monaco.editor.createModel(value, language, uri)
+    // react-monaco-editor 是外部传入 model 创建编辑器的，编辑器不持有 model 所有权，
+    // 被换下来的旧 model 没人释放，必须手动 dispose，否则每次挂载都会泄漏
+    const oldModel = editorRef.current?.getModel()
     editorRef.current?.setModel(model)
+    oldModel?.dispose()
+    modelRef.current = model
   }
 
   useEffect(() => {
@@ -112,6 +118,9 @@ export const BaseEditor: React.FC<Props> = (props) => {
       window.onresize = null
       editorRef.current?.dispose()
       editorRef.current = undefined
+      // 编辑器 dispose 不会连带释放外部传入的 model，需自行释放，否则文本和校验状态会常驻内存
+      modelRef.current?.dispose()
+      modelRef.current = undefined
     }
   }, [])
 

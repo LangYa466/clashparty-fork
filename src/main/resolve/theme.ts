@@ -41,11 +41,8 @@ export async function fetchThemes(): Promise<void> {
   const zipData = await chromeRequest.get(zipUrl, {
     responseType: 'arraybuffer',
     headers: { 'Content-Type': 'application/octet-stream' },
-    proxy: {
-      protocol: 'http',
-      host: '127.0.0.1',
-      port: mixedPort
-    }
+    // mixed-port 为 0 表示用户关闭了混合入站，此时必须直连，否则会去连不存在的 127.0.0.1:0
+    proxy: mixedPort !== 0 ? { protocol: 'http', host: '127.0.0.1', port: mixedPort } : false
   })
   const zip = new AdmZip(Buffer.from(zipData.data as Buffer))
   zip.extractAllTo(themesDir(), true)

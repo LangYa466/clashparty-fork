@@ -292,12 +292,14 @@ export async function getIconDataURL(appPath: string): Promise<string> {
           }
         }
       }
-    } else {
-      return darwinDefaultIcon
     }
+    // 解析不到图标（.desktop 缺 Icon= 或图标文件找不到）时也必须返回默认图标：
+    // 返回空串会让渲染层跳过缓存，导致每次连接列表刷新都重新发起一次
+    // 同步扫描 /usr/share/applications 的请求，永久阻塞主进程
+    return darwinDefaultIcon
   }
 
-  return ''
+  return otherDevicesIcon
 }
 
 export async function getImageDataURL(url: string): Promise<string> {

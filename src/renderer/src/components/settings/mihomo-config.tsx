@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { toast } from '@renderer/components/base/toast'
 import { Button, Input, Select, SelectItem, Switch, Tooltip } from '@heroui/react'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
@@ -43,13 +43,24 @@ const MihomoConfig: React.FC = () => {
   } = appConfig || {}
   const [url, setUrl] = useState(delayTestUrl)
   const [pauseSSIDInput, setPauseSSIDInput] = useState(pauseSSID)
-  const setUrlDebounce = debounce((v: string) => {
-    patchAppConfig({ delayTestUrl: v })
-  }, 500)
   const [ua, setUa] = useState(userAgent)
-  const setUaDebounce = debounce((v: string) => {
-    patchAppConfig({ userAgent: v })
-  }, 500)
+  // 防抖实例必须跨渲染复用，否则每次按键都会拿到新实例、清不掉上一次的定时器
+  const patchAppConfigRef = useRef(patchAppConfig)
+  patchAppConfigRef.current = patchAppConfig
+  const setUrlDebounce = useMemo(
+    () =>
+      debounce((v: string) => {
+        patchAppConfigRef.current({ delayTestUrl: v })
+      }, 500),
+    []
+  )
+  const setUaDebounce = useMemo(
+    () =>
+      debounce((v: string) => {
+        patchAppConfigRef.current({ userAgent: v })
+      }, 500),
+    []
+  )
   const [isGeneratingGistAgeKey, setIsGeneratingGistAgeKey] = useState(false)
   const [isExportingGistAgeKey, setIsExportingGistAgeKey] = useState(false)
   const handleGenerateGistAgeKeyPair = async (): Promise<void> => {
@@ -108,7 +119,11 @@ const MihomoConfig: React.FC = () => {
             type="number"
             value={(subscriptionTimeout / 1000)?.toString()}
             onValueChange={async (v: string) => {
-              const num = parseInt(v)
+              // 清空输入框时 parseInt('') 是 NaN，NaN * 1000 仍是 NaN，
+              // 经 IPC 序列化后会以 null 落盘。onBlur 只在失焦时才纠正，
+              // 中间这段时间配置里是坏值，这里直接不写非法值。
+              const num = parseInt(v, 10)
+              if (!Number.isFinite(num)) return
               await patchAppConfig({ subscriptionTimeout: num * 1000 })
             }}
             onBlur={async (e) => {

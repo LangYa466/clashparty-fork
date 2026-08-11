@@ -165,7 +165,9 @@ const processPathWildcardValidator = (value: string): boolean => {
   if (value.length === 0) return false
   // 包含通配符的路径，移除通配符后检查路径格式
   const withoutWildcards = value.replace(/\*/g, 'a').replace(/\?/g, 'a')
-  return processPathValidator(withoutWildcards)
+  if (processPathValidator(withoutWildcards)) return true
+  // Windows 常见的前缀通配写法（如 *\chrome.exe）不是绝对路径，需单独放行
+  return /^[*?][^\\/]*[\\/].+/.test(value)
 }
 
 // 进程路径正则验证器

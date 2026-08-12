@@ -4,8 +4,8 @@
   "description": "Clash Party",
   "type": "module",
   "main": "./out/main/index.js",
-  "author": "mihomo-party-org",
-  "homepage": "https://clashparty.org",
+  "author": "LangYa466",
+  "homepage": "https://github.com/LangYa466/clashparty-fork",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",

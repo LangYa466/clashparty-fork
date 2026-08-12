@@ -237,6 +237,10 @@ async function initFiles(): Promise<void> {
     {
       name: 'BundleMRS.7z',
       targetDirs: [mihomoWorkDir(), mihomoTestDir()]
+    },
+    {
+      name: 'default.css',
+      targetDirs: [themesDir()]
     }
   ]
 

@@ -76,7 +76,7 @@ linux:
     - deb
     - rpm
     - pacman
-  maintainer: mihomo-party-org
+  maintainer: LangYa466
   category: Utility
   artifactName: clash-party-linux-${version}-${arch}.${ext}
 deb:

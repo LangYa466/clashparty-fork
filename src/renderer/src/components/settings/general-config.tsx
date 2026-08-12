@@ -311,10 +311,7 @@ const GeneralConfig: React.FC = () => {
           >
             <SelectItem key="auto">{t('settings.githubProxy.auto')}</SelectItem>
             <SelectItem key="direct">{t('settings.githubProxy.direct')}</SelectItem>
-            <SelectItem key="https://gh-proxy.org">gh-proxy.org</SelectItem>
             <SelectItem key="https://ghfast.top">ghfast.top</SelectItem>
-            <SelectItem key="https://down.clashparty.org">down.clashparty.org</SelectItem>
-            <SelectItem key="https://download.mihomo.party">download.mihomo.party</SelectItem>
           </Select>
         </SettingItem>
         <SettingItem title={t('settings.silentStart')} divider>

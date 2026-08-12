@@ -42,9 +42,7 @@ mac:
   extraResources:
     - from: './build/pkg-scripts/party.mihomo.helper.plist'
       to: 'files/party.mihomo.helper.plist'
-  entitlementsInherit: build/entitlements.mac.plist
-  hardenedRuntime: true
-  gatekeeperAssess: false
+  identity: null
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.

@@ -3,7 +3,7 @@ import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { checkUpdate, downloadAndInstallUpdate } from '@renderer/utils/ipc'
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import useSWR from 'swr'
-import { platform } from '@renderer/utils/init'
+import { platform, scoop } from '@renderer/utils/init'
 import { MdNewReleases } from 'react-icons/md'
 
 const UpdaterModal = lazy(() => import('./updater-modal'))
@@ -25,7 +25,7 @@ const UpdaterButton: React.FC<Props> = (props) => {
       refreshInterval: 1000 * 60 * 10
     }
   )
-  const canSilentlyUpdate = platform === 'win32' || platform === 'darwin'
+  const canSilentlyUpdate = (platform === 'win32' || platform === 'darwin') && !scoop
   const shouldSilentlyUpdate = autoCheckUpdate && silentUpdate && canSilentlyUpdate
 
   useEffect(() => {

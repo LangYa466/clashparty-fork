@@ -1,4 +1,4 @@
-import { getPlatform, getVersion } from './ipc'
+import { getPlatform, getScoopStatus, getVersion } from './ipc'
 // const originError = console.error
 // const originWarn = console.warn
 // console.error = function (...args: any[]): void {
@@ -16,8 +16,10 @@ import { getPlatform, getVersion } from './ipc'
 
 export let platform: NodeJS.Platform
 export let version: string
+export let scoop: boolean
 
 export async function init(): Promise<void> {
   platform = await getPlatform()
   version = await getVersion()
+  scoop = await getScoopStatus()
 }

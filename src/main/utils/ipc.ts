@@ -117,7 +117,7 @@ import { getImageDataURL } from './image'
 import { get as httpGet } from './chromeRequest'
 import { getIconDataURL } from './icon'
 import { getAppName } from './appName'
-import { logDir, rulePath } from './dirs'
+import { isScoopInstall, logDir, rulePath } from './dirs'
 import { installMihomoCore, getGitHubTags, clearVersionCache } from './github'
 import { atomicWriteFile } from './safeFile'
 import { assertSafeId } from './security'
@@ -347,6 +347,7 @@ const syncHandlers: Record<string, SyncFn> = {
   getInterfaces,
   setNativeTheme,
   getVersion: () => app.getVersion(),
+  getScoopStatus: isScoopInstall,
   platform: () => process.platform,
   updateTrayIconImmediate,
   showMainWindow,

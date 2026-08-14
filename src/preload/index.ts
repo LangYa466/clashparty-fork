@@ -94,6 +94,7 @@ const validInvokeChannels = [
   // Update
   'checkUpdate',
   'downloadAndInstallUpdate',
+  'getScoopStatus',
   'getVersion',
   'platform',
   'fetchMihomoTags',

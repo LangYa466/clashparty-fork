@@ -1,0 +1,61 @@
+{
+  "version": "2.0.0",
+  "description": "A GUI client based on Mihomo (Clash Meta)",
+  "homepage": "https://github.com/LangYa466/clashparty-fork",
+  "license": "GPL-3.0-only",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v$version/clash-party-windows-$version-x64-portable.7z",
+      "hash": "3fcd2a498a7730fd97eaa258fcbc8375e2537a29f14fcb3ca05c5943e9f172d1"
+    },
+    "32bit": {
+      "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v$version/clash-party-windows-$version-ia32-portable.7z",
+      "hash": "f33fbb9af8a7acf8b43b85614affc30990ff084785e0c4fe682a3f0e30ca2f9a"
+    },
+    "arm64": {
+      "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v$version/clash-party-windows-$version-arm64-portable.7z",
+      "hash": "9842944fb7bf48fb3348d21f78bddb3b582aa63a597360b45fff25774c86fb7e"
+    }
+  },
+  "bin": [["Clash Party.exe", "clash-party"]],
+  "shortcuts": [["Clash Party.exe", "Clash Party"]],
+  "persist": ["data"],
+  "post_install": [
+    "$exe = \"$dir\\Clash Party.exe\"",
+    "$protocols = @('clash', 'mihomo')",
+    "foreach ($protocol in $protocols) {",
+    "  $key = \"HKCU:\\Software\\Classes\\$protocol\"",
+    "  New-Item -Path \"$key\\shell\\open\\command\" -Force | Out-Null",
+    "  New-Item -Path \"$key\\DefaultIcon\" -Force | Out-Null",
+    "  Set-ItemProperty -Path $key -Name '(default)' -Value \"URL:$protocol Protocol\"",
+    "  Set-ItemProperty -Path $key -Name 'URL Protocol' -Value ''",
+    "  Set-ItemProperty -Path \"$key\\shell\\open\\command\" -Name '(default)' -Value ('\"{0}\" \"%1\"' -f $exe)",
+    "  Set-ItemProperty -Path \"$key\\DefaultIcon\" -Name '(default)' -Value ('\"{0}\",0' -f $exe)",
+    "}"
+  ],
+  "pre_uninstall": [
+    "foreach ($protocol in @('clash', 'mihomo')) {",
+    "  Remove-Item -Path \"HKCU:\\Software\\Classes\\$protocol\" -Recurse -Force -ErrorAction SilentlyContinue",
+    "}"
+  ],
+  "checkver": {
+    "github": "https://github.com/LangYa466/clashparty-fork"
+  },
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v$version/clash-party-windows-$version-x64-portable.7z"
+      },
+      "32bit": {
+        "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v$version/clash-party-windows-$version-ia32-portable.7z"
+      },
+      "arm64": {
+        "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v$version/clash-party-windows-$version-arm64-portable.7z"
+      }
+    },
+    "hash": {
+      "url": "$url.sha256",
+      "regex": "([a-fA-F0-9]{64})"
+    }
+  }
+}

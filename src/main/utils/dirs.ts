@@ -9,6 +9,29 @@ export function isPortable(): boolean {
   return existsSync(path.join(exeDir(), 'PORTABLE'))
 }
 
+// 判斷是否由 Scoop 管理：scoop 會把 app 裝在
+// `$SCOOP\apps\<app>\current` 或 `$SCOOP_GLOBAL\apps\<app>\current`，
+// 更新應交給 `scoop update` 處理，避免就地解壓破壞版次目錄結構。
+export function isScoopInstall(): boolean {
+  return isScoopPath(process.platform, exePath(), process.env)
+}
+
+export function isScoopPath(
+  platform: NodeJS.Platform,
+  exePathValue: string,
+  env: NodeJS.ProcessEnv = process.env
+): boolean {
+  if (platform !== 'win32') return false
+  const exe = exePathValue.toLowerCase()
+  const scoop = env.SCOOP?.toLowerCase()
+  const scoopGlobal = env.SCOOP_GLOBAL?.toLowerCase()
+  return (
+    exe.includes('\\scoop\\apps\\') ||
+    (!!scoop && exe.startsWith(scoop)) ||
+    (!!scoopGlobal && exe.startsWith(scoopGlobal))
+  )
+}
+
 function portableDataDir(): string {
   return path.join(exeDir(), 'data')
 }

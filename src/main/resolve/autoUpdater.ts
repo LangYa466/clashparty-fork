@@ -9,7 +9,14 @@ import { app, shell } from 'electron'
 import i18next from 'i18next'
 import { mainWindow } from '../window'
 import { appLogger } from '../utils/logger'
-import { dataDir, exeDir, exePath, isPortable, resourcesFilesDir } from '../utils/dirs'
+import {
+  dataDir,
+  exeDir,
+  exePath,
+  isPortable,
+  isScoopInstall,
+  resourcesFilesDir
+} from '../utils/dirs'
 import { getAppConfig, getControledMihomoConfig } from '../config'
 import { DEFAULT_MIHOMO_PORTS } from '../../shared/appConfig'
 import { checkAdminPrivileges } from '../core/manager'
@@ -17,6 +24,9 @@ import { parse } from '../utils/yaml'
 import * as chromeRequest from '../utils/chromeRequest'
 
 const GITHUB_PROXIES = ['https://ghfast.top']
+
+// Scoop 安裝下 app 名稱（等於 scoop manifest 檔名）
+const SCOOP_APP_NAME = 'clash-party'
 
 let updateInstallPromise: Promise<void> | undefined
 
@@ -143,6 +153,22 @@ export function downloadAndInstallUpdate(version: string): Promise<void> {
 }
 
 async function installUpdate(version: string): Promise<void> {
+  // Scoop 安裝的版本目錄由 scoop 管理，就地解壓會破壞版次結構，
+  // 直接把更新委派給 `scoop update`。先讓 app 退出（等 5 秒釋放 exe），
+  // 更新完成後再經 shim 重新啟動。
+  if (isScoopInstall()) {
+    await appLogger.info('Scoop install detected, delegating update to scoop')
+    spawn(
+      'cmd',
+      [
+        '/C',
+        `timeout /t 5 /nobreak >nul & scoop update ${SCOOP_APP_NAME} & start "" ${SCOOP_APP_NAME}`
+      ],
+      { shell: true, detached: true }
+    ).unref()
+    app.quit()
+    return
+  }
   const [{ 'mixed-port': mixedPort = DEFAULT_MIHOMO_PORTS.mixed }, { githubProxy = '' }] =
     await Promise.all([getControledMihomoConfig(), getAppConfig()])
   const githubBase = `https://github.com/LangYa466/clashparty-fork/releases/download/v${version}/`

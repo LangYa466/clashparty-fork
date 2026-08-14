@@ -105,6 +105,7 @@ interface IpcApi {
   // Update
   checkUpdate: () => Promise<IAppVersion | undefined>
   downloadAndInstallUpdate: (version: string) => Promise<void>
+  getScoopStatus: () => Promise<boolean>
   getVersion: () => Promise<string>
   platform: () => Promise<NodeJS.Platform>
   fetchMihomoTags: (
@@ -255,6 +256,7 @@ export const {
   // Update
   checkUpdate,
   downloadAndInstallUpdate,
+  getScoopStatus,
   getVersion,
   fetchMihomoTags,
   installSpecificMihomoCore,

@@ -87,3 +87,48 @@ describe('configureAppPaths', () => {
     expect(setPath).toHaveBeenLastCalledWith('userData', path.join(EXE_DIR, 'data'))
   })
 })
+
+describe('isScoopPath', () => {
+  it('is false on non-Windows platforms', async () => {
+    const { isScoopPath } = await import('./dirs')
+    expect(isScoopPath('linux', 'C:\\scoop\\apps\\clash-party\\current\\Clash Party.exe', {})).toBe(
+      false
+    )
+    expect(
+      isScoopPath('darwin', 'C:\\scoop\\apps\\clash-party\\current\\Clash Party.exe', {})
+    ).toBe(false)
+  })
+
+  it('detects the default per-user scoop install by path', async () => {
+    const { isScoopPath } = await import('./dirs')
+    expect(
+      isScoopPath('win32', 'C:\\Users\\me\\scoop\\apps\\clash-party\\current\\Clash Party.exe', {})
+    ).toBe(true)
+  })
+
+  it('detects a non-default scoop root via the SCOOP env var', async () => {
+    const { isScoopPath } = await import('./dirs')
+    expect(
+      isScoopPath('win32', 'D:\\Apps\\scoop\\apps\\clash-party\\current\\Clash Party.exe', {
+        SCOOP: 'D:\\Apps\\scoop'
+      })
+    ).toBe(true)
+  })
+
+  it('detects a global scoop install via SCOOP_GLOBAL', async () => {
+    const { isScoopPath } = await import('./dirs')
+    expect(
+      isScoopPath('win32', 'C:\\ProgramData\\scoop\\apps\\clash-party\\current\\Clash Party.exe', {
+        SCOOP_GLOBAL: 'C:\\ProgramData\\scoop'
+      })
+    ).toBe(true)
+  })
+
+  it('is false for a regular install or a plain portable folder', async () => {
+    const { isScoopPath } = await import('./dirs')
+    expect(isScoopPath('win32', 'C:\\Program Files\\Clash Party\\Clash Party.exe', {})).toBe(false)
+    expect(isScoopPath('win32', 'D:\\clash-party\\Clash Party.exe', { SCOOP: 'D:\\scoop' })).toBe(
+      false
+    )
+  })
+})

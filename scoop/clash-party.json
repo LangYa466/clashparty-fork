@@ -1,20 +1,20 @@
 {
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A GUI client based on Mihomo (Clash Meta)",
   "homepage": "https://github.com/LangYa466/clashparty-fork",
   "license": "GPL-3.0-only",
   "architecture": {
     "64bit": {
       "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v$version/clash-party-windows-$version-x64-portable.7z",
-      "hash": "3fcd2a498a7730fd97eaa258fcbc8375e2537a29f14fcb3ca05c5943e9f172d1"
+      "hash": "03ec028a7dfe27be39ccb680623eb7226147a99cbcb9fa374db4682c2190a8b2"
     },
     "32bit": {
       "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v$version/clash-party-windows-$version-ia32-portable.7z",
-      "hash": "f33fbb9af8a7acf8b43b85614affc30990ff084785e0c4fe682a3f0e30ca2f9a"
+      "hash": "a528061aa1969f1d01a77cbf633b9af90efdad2bf84b7a15763964277f7f7329"
     },
     "arm64": {
       "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v$version/clash-party-windows-$version-arm64-portable.7z",
-      "hash": "9842944fb7bf48fb3348d21f78bddb3b582aa63a597360b45fff25774c86fb7e"
+      "hash": "2336d2a7c14124e70ec6078c2c0a3e3bef15f7a1e23c4c64946950a521881aca"
     }
   },
   "bin": [["Clash Party.exe", "clash-party"]],

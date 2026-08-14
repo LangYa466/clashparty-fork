@@ -19,50 +19,63 @@ if (token) {
   headers.Authorization = `Bearer ${token}`
 }
 
-// release 資產由 build.yml 的 windows job 非同步上傳（需等 3 個 arch 都打包完），
-// 發布剛建立時可能還沒就緒，重試等待最多約 30 分鐘。
-async function fetchRelease(attempts = 120, delayMs = 15000) {
+const archSuffix = { '64bit': 'x64', '32bit': 'ia32', arm64: 'arm64' }
+
+function assetNameFor(version, suffix) {
+  return `clash-party-windows-${version}-${suffix}-portable.7z`
+}
+
+function urlLineFor(suffix) {
+  return `      "url": "https://github.com/${repo}/releases/download/v$version/clash-party-windows-$version-${suffix}-portable.7z",`
+}
+
+// build.yml 各平台 job 非同步上傳資產：macos 先發佈建立 release，
+// windows 的 portable.7z 會晚到。必須等三個 arch 的資產都上傳完、
+// digest 都齊了才寫入 manifest，只等 release 存在會抓不到 404。
+async function waitForAssets(attempts = 120, delayMs = 15000) {
   const url = `https://api.github.com/repos/${repo}/releases/tags/v${version}`
   for (let i = 0; i < attempts; i++) {
     const res = await fetch(url, { headers })
     if (res.ok) {
-      return await res.json()
+      const release = await res.json()
+      const digests = {}
+      for (const [arch, suffix] of Object.entries(archSuffix)) {
+        const match = release.assets
+          ?.find((item) => item.name === assetNameFor(version, suffix))
+          ?.digest?.match(/^sha256:([a-f\d]{64})$/i)
+        if (match) digests[arch] = match[1].toLowerCase()
+      }
+      if (Object.keys(digests).length === Object.keys(archSuffix).length) {
+        return digests
+      }
+      console.log('Windows portable assets not fully uploaded yet, retrying...')
+    } else {
+      console.log(
+        `Release v${version} not ready yet (${res.status}), retrying in ${delayMs / 1000}s...`
+      )
     }
-    console.log(
-      `Release v${version} not ready yet (${res.status}), retrying in ${delayMs / 1000}s...`
-    )
     await new Promise((resolve) => setTimeout(resolve, delayMs))
   }
-  throw new Error(`Release v${version} not found after ${attempts} attempts`)
+  throw new Error(`Windows portable assets for v${version} not ready after ${attempts} attempts`)
 }
 
-function sha256FromAsset(release, assetName) {
-  const asset = release.assets?.find((item) => item.name === assetName)
-  return asset?.digest?.match(/^sha256:([a-f\d]{64})$/i)?.[1]?.toLowerCase()
-}
+const digests = await waitForAssets()
 
-async function sha256FromShaFile(assetName) {
-  const shaUrl = `https://github.com/${repo}/releases/download/v${version}/${assetName}.sha256`
-  const res = await fetch(shaUrl)
-  if (!res.ok) throw new Error(`Failed to fetch ${shaUrl}: ${res.status}`)
-  return (await res.text()).trim().split(/\s+/)[0].toLowerCase()
-}
-
-const release = await fetchRelease()
-
-const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
-const archSuffix = { '64bit': 'x64', '32bit': 'ia32', arm64: 'arm64' }
+// 逐行替換保留原本排版，避免 JSON.stringify 重排造成無謂 diff。
+const lines = readFileSync(manifestPath, 'utf8').split('\n')
 
 for (const [arch, suffix] of Object.entries(archSuffix)) {
-  const assetName = `clash-party-windows-${version}-${suffix}-portable.7z`
-  const digest = sha256FromAsset(release, assetName)
-  manifest.architecture[arch].hash = digest ?? (await sha256FromShaFile(assetName))
-  if (!manifest.architecture[arch].hash) {
-    throw new Error(`Missing sha256 for ${assetName}`)
+  const urlIdx = lines.findIndex((line) => line === urlLineFor(suffix))
+  if (urlIdx === -1 || !lines[urlIdx + 1]?.includes('"hash":')) {
+    throw new Error(`Cannot locate hash line for ${arch}`)
   }
-  console.log(`${arch} ${assetName} -> ${manifest.architecture[arch].hash}`)
+  lines[urlIdx + 1] = lines[urlIdx + 1].replace(/[a-f0-9]{64}/, digests[arch])
+  console.log(`${arch} ${assetNameFor(version, suffix)} -> ${digests[arch]}`)
 }
 
-manifest.version = version
-writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
+const versionIdx = lines.findIndex((line) => line.startsWith('  "version":'))
+if (versionIdx === -1) throw new Error('Cannot locate version field')
+lines[versionIdx] = `  "version": "${version}",`
+
+writeFileSync(manifestPath, lines.join('\n'))
 console.log(`Updated ${manifestPath} to v${version}`)

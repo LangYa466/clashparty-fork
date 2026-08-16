@@ -25,8 +25,8 @@ function assetNameFor(version, suffix) {
   return `clash-party-windows-${version}-${suffix}-portable.7z`
 }
 
-function urlLineFor(suffix) {
-  return `      "url": "https://github.com/${repo}/releases/download/v$version/clash-party-windows-$version-${suffix}-portable.7z",`
+function urlLineFor(version, suffix) {
+  return `      "url": "https://github.com/${repo}/releases/download/v${version}/clash-party-windows-${version}-${suffix}-portable.7z",`
 }
 
 // build.yml 各平台 job 非同步上傳資產：macos 先發佈建立 release，
@@ -64,11 +64,18 @@ const digests = await waitForAssets()
 // 逐行替換保留原本排版，避免 JSON.stringify 重排造成無謂 diff。
 const lines = readFileSync(manifestPath, 'utf8').split('\n')
 
+const autoupdateIdx = lines.findIndex((line) => line.startsWith('  "autoupdate"'))
+if (autoupdateIdx === -1) throw new Error('Cannot locate autoupdate section')
+const mainSection = lines.slice(0, autoupdateIdx)
+
 for (const [arch, suffix] of Object.entries(archSuffix)) {
-  const urlIdx = lines.findIndex((line) => line === urlLineFor(suffix))
+  const urlIdx = mainSection.findIndex(
+    (line) => line.includes('clash-party-windows-') && line.includes(`-${suffix}-portable.7z`)
+  )
   if (urlIdx === -1 || !lines[urlIdx + 1]?.includes('"hash":')) {
     throw new Error(`Cannot locate hash line for ${arch}`)
   }
+  lines[urlIdx] = urlLineFor(version, suffix)
   lines[urlIdx + 1] = lines[urlIdx + 1].replace(/[a-f0-9]{64}/, digests[arch])
   console.log(`${arch} ${assetNameFor(version, suffix)} -> ${digests[arch]}`)
 }

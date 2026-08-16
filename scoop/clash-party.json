@@ -5,15 +5,15 @@
   "license": "GPL-3.0-only",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v$version/clash-party-windows-$version-x64-portable.7z",
+      "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v2.0.1/clash-party-windows-2.0.1-x64-portable.7z",
       "hash": "03ec028a7dfe27be39ccb680623eb7226147a99cbcb9fa374db4682c2190a8b2"
     },
     "32bit": {
-      "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v$version/clash-party-windows-$version-ia32-portable.7z",
+      "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v2.0.1/clash-party-windows-2.0.1-ia32-portable.7z",
       "hash": "a528061aa1969f1d01a77cbf633b9af90efdad2bf84b7a15763964277f7f7329"
     },
     "arm64": {
-      "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v$version/clash-party-windows-$version-arm64-portable.7z",
+      "url": "https://github.com/LangYa466/clashparty-fork/releases/download/v2.0.1/clash-party-windows-2.0.1-arm64-portable.7z",
       "hash": "2336d2a7c14124e70ec6078c2c0a3e3bef15f7a1e23c4c64946950a521881aca"
     }
   },
